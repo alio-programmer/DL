@@ -1,0 +1,46 @@
+import tensorflow
+import keras
+import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.layers import Flatten, Conv2D, BatchNormalization, Layer, Dense, Dropout, Input
+from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.losses import sparse_categorical_crossentropy
+from tensorflow.keras.datasets import mnist
+from tensorflow.image import resize
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train = np.stack((x_train,) * 3, axis=-1)
+x_test = np.stack((x_test,) * 3, axis=-1)
+
+x_train = resize(x_train, (32, 32))
+x_test = resize(x_test, (32, 32))
+
+x_train = x_train/255.0
+x_test = x_test/255.0
+
+vgg_model = VGG16(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+for layer in vgg_model.layers:
+    layer.trainable=False
+
+custom_classifier = Sequential()
+custom_classifier.add(Flatten())
+custom_classifier.add(Dense(128, activation="relu"))
+custom_classifier.add(Dropout(0.4))
+custom_classifier.add(Dense(64, activation='relu'))
+custom_classifier.add(Dropout(0.4))
+custom_classifier.add(Dense(10, activation='softmax'))
+
+model = Sequential([vgg_model, custom_classifier])
+
+model.summary()
+
+model.compile(optimizer='adam', loss=sparse_categorical_crossentropy ,metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=5, batch_size=256, validation_data=(x_test, y_test))
+
+for layer in vgg_model.layers[:-4]:
+ layer.trainable = True
+
+model.compile(optimizer='adam', loss=sparse_categorical_crossentropy ,metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=5, batch_size=256, validation_data=(x_test, y_test))

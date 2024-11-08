@@ -1,0 +1,46 @@
+from tensorflow.keras.losses import sparse_categorical_crossentropy
+from tensorflow.keras.layers import Flatten, Activation, Normalization, MaxPooling2D, Conv2D, Dense, Dropout
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.datasets import cifar10
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer','dog', 'frog', 'horse', 'ship', 'truck']
+x_train = x_train/255.0
+x_test = x_test/255.0
+model = Sequential()
+
+model.add(Conv2D(32, (3,3), padding='same', activation='relu', input_shape=(32,32,3)))
+model.add(BatchNormalization())
+model.add(Conv2D(32, (3,3), padding='same', activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.3))
+
+model.add(Conv2D(64, (3,3), padding='same', activation='relu'))
+model.add(BatchNormalization())
+model.add(Conv2D(64, (3,3), padding='same', activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.5))
+
+model.add(Conv2D(128, (3,3), padding='same', activation='relu'))
+model.add(BatchNormalization())
+model.add(Conv2D(128, (3,3), padding='same', activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.5))
+
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+model.add(Dense(10, activation='softmax'))    # num_classes = 10
+
+# Checking the model summary
+model.summary()
+adam = Adam(0.001)
+model.compile(optimizer=adam, metrics=['Accuracy'], loss=sparse_categorical_crossentropy)
+model.fit(x_train, y_train, batch_size=64, epochs=20, validation_data=(x_test, y_test))
+model_eval = model.evaluate(x_test, y_test)
+print("Accuracy of model is:", model_eval[1], "%")
